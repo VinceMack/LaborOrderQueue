@@ -78,8 +78,7 @@ class Program {
             workingPawns.Add(pawn);
             freePawns.Remove(pawn);
             new Thread(() => {
-                // print the name of the pawn and the type of labor order they are working on
-                Console.WriteLine(pawn.name + " is working on a " + pawn.currentOrder.type + " order.");
+                Console.WriteLine(pawn.name + " is working on a " + pawn.currentOrder.type + " order."); // print the name of the pawn and the type of labor order they are working on
                 Thread.Sleep(pawn.currentOrder.ttc);
                 freePawns.Add(pawn);
                 workingPawns.Remove(pawn);
