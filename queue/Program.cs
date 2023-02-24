@@ -32,8 +32,10 @@ class Program {
 
     static void Main(string[] args) {
 
-        // random list of names
-        string[] firstNames = {"Oliver", "Emma", "Noah", "Ava", "William", "Sophia", "James", "Isabella", "Benjamin", "Mia", "Lucas", "Charlotte", "Henry", "Amelia", "Alexander", "Harper", "Ethan", "Evelyn", "Michael", "Abigail", "Daniel", "Emily", "Matthew", "Elizabeth", "Jacob", "Mila", "Liam", "Ella", "Mason", "Avery", "Daniel", "Madison", "Logan", "Scarlett", "Caleb", "Grace", "David", "Chloe", "Owen", "Victoria", "Jackson", "Riley", "Luke", "Aria", "Sebastian", "Lily", "Isaac", "Sofia", "Samuel", "Luna"};
+        // list of names no longer than 7 characters
+        string[] firstNames = new string[] {
+            "Aiden", "Alex", "Alexis", "Alyssa", "Andrew", "Anthony", "Austin", "Benjamin", "Blake", "Brandon", "Brayden", "Brianna", "Brooke", "Caleb", "Cameron", "Carson", "Carter", "Chloe", "Christian", "Christopher", "Daniel", "David", "Dylan", "Elijah", "Ethan", "Evan", "Gabriel", "Gavin", "Grace", "Hailey", "Hannah", "Hunter", "Isaac", "Isabella", "Jacob", "Jaden", "Jasmine", "Jayden", "Jessica", "John", "Jonathan", "Jordan", "Joseph", "Joshua", "Julia", "Justin", "Kaitlyn", "Kayla", "Kevin", "Landon", "Lauren", "Liam", "Logan", "Lucas", "Luke", "Madison", "Mason", "Matthew", "Megan", "Michael", "Morgan", "Nathan", "Nicholas", "Noah", "Olivia", "Owen", "Peyton", "Rachel", "Riley", "Robert", "Ryan", "Samantha", "Sarah", "Savannah", "Sean", "Sophia", "Sophie", "Taylor", "Thomas", "Tyler", "Victoria", "William", "Zachary"
+        };
 
         // create a list of pawns called "workingPawns"
         List<Pawn> workingPawns = new List<Pawn>();
@@ -73,35 +75,27 @@ class Program {
         // store a temporary reference to the pawn and add it to the list of working pawns; remove it from the list of free pawns.
         // start a new thread and have it sleep for the time to complete of the labor order for the pawn
         // when the thread wakes up, add the pawn back to the list of free pawns and remove it from the list of working pawns
+        Mutex mutex = new Mutex();
         while (laborOrders.Count > 0 && freePawns.Count > 0) {
-            Pawn pawn = freePawns[0];
-            pawn.currentOrder = laborOrders.Dequeue();
-            workingPawns.Add(pawn);
+            Pawn pawn = null;
+            mutex.WaitOne();
+            pawn = freePawns[0];
+            mutex.ReleaseMutex();
+
+            if(pawn==null){
+                continue;
+            }
+
             freePawns.Remove(pawn);
+            workingPawns.Add(pawn);
+            pawn.currentOrder = laborOrders.Dequeue();
             new Thread(() => {
-                Console.WriteLine(pawn.name + " is working on a " + pawn.currentOrder.type + " order."); // print the name of the pawn and the type of labor order they are working on
+                Console.WriteLine(pawn.name + "\tis working on a " + pawn.currentOrder.type + " order."); // print the name of the pawn and the type of labor order they are working on
                 Thread.Sleep(pawn.currentOrder.ttc);
-                freePawns.Add(pawn);
                 workingPawns.Remove(pawn);
+                freePawns.Add(pawn);
+                Console.WriteLine(pawn.name + " is freed."); // print the name of the pawn and the type of labor order they are working on
             }).Start();
         }
     }
 }
-
-/*
-Sophia is working on a forage order.
-Chloe is working on a storage order.
-Emma is working on a forage order.
-Alexander is working on a generic order.
-Logan is working on a storage order.
-Emma is working on a forage order.
-Daniel is working on a forage order.
-Sofia is working on a forage order.
-Grace is working on a storage order.
-Lucas is working on a storage order.
-Unhandled exception. System.ArgumentOutOfRangeException: Index was out of range. Must be non-negative and less than the size of the collection. (Parameter 'index')
-   at System.Collections.Generic.List`1.RemoveAt(Int32 index)
-   at System.Collections.Generic.List`1.Remove(T item)
-   at Program.<>c__DisplayClass0_1.<Main>b__0() in C:\Users\VAM\Desktop\Priority Event Queue\queue\Program.cs:line 85
-PS C:\Users\VAM\Desktop\Priority Event Queue\queue> 
-*/
