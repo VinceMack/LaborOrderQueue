@@ -32,6 +32,7 @@ class Program {
 
     static void Main(string[] args) {
 
+        // random list of names
         string[] firstNames = {"Oliver", "Emma", "Noah", "Ava", "William", "Sophia", "James", "Isabella", "Benjamin", "Mia", "Lucas", "Charlotte", "Henry", "Amelia", "Alexander", "Harper", "Ethan", "Evelyn", "Michael", "Abigail", "Daniel", "Emily", "Matthew", "Elizabeth", "Jacob", "Mila", "Liam", "Ella", "Mason", "Avery", "Daniel", "Madison", "Logan", "Scarlett", "Caleb", "Grace", "David", "Chloe", "Owen", "Victoria", "Jackson", "Riley", "Luke", "Aria", "Sebastian", "Lily", "Isaac", "Sofia", "Samuel", "Luna"};
 
         // create a list of pawns called "workingPawns"
