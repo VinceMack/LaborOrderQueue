@@ -19,8 +19,10 @@
 
 class Pawn  {
 
+    enum PawnType { storage, forage, generic };
+
     public string name;
-    public string type;
+    public string type = "generic";
     public LaborOrder currentOrder;
     public Boolean isTypeExclusive;
     
@@ -28,6 +30,10 @@ class Pawn  {
         this.type = type;
         this.name = name;
         this.isTypeExclusive = isTypeExclusive;
+
+        if(isTypeExclusive){
+            this.name = name + "_te";
+        }
     }
 
 }
@@ -50,27 +56,31 @@ class Program {
         // create a FIFO queue of labor orders called "laborOrders"
         Queue<LaborOrder> laborOrders = new Queue<LaborOrder>();
 
-        // fill the list of free pawns with 10 pawns randomly assigned to either "storage", "forage", or "generic" as their type. give them a random name. give tham random t/f for isTypeExclusive.
+        // fill the list of 10 free pawns: give pawns random names. make 2 storage type pawns, make 1 type exclusive. make 2 forage type pawns, make 1 type exclusive. the rest are generic type pawns.
         for (int i = 0; i < 10; i++) {
-            int type = new Random().Next(0, 3);
-            if (type == 0) {
-                freePawns.Add(new Pawn("storage", firstNames[new Random().Next(0, firstNames.Length)], new Random().Next(0, 2) == 0));
-            } else if (type == 1) {
-                freePawns.Add(new Pawn("forage", firstNames[new Random().Next(0, firstNames.Length)], new Random().Next(0, 2) == 0));
+            if (i == 0) {
+                freePawns.Add(new Pawn("storage", firstNames[new Random().Next(0, firstNames.Length)], true));
+            } else if (i == 1) {
+                freePawns.Add(new Pawn("storage", firstNames[new Random().Next(0, firstNames.Length)], false));
+            } else if (i == 2) {
+                freePawns.Add(new Pawn("forage", firstNames[new Random().Next(0, firstNames.Length)], true));
+            } else if (i == 3) {
+                freePawns.Add(new Pawn("forage", firstNames[new Random().Next(0, firstNames.Length)], false));
             } else {
-                freePawns.Add(new Pawn("generic", firstNames[new Random().Next(0, firstNames.Length)], new Random().Next(0, 2) == 0));
+                freePawns.Add(new Pawn("generic", firstNames[new Random().Next(0, firstNames.Length)], false));
             }
         }
+
 
         // fill the queue of labor orders with 25 labor orders randomly assigned to either "storage", "forage", or "generic" as their type (other properties can be 0; other than tcc which is random between 1000 and 10000)
         for (int i = 0; i < 25; i++) {
             int type = new Random().Next(0, 3);
             if (type == 0) {
-                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(1000, 5000), new string[] { }, "storage", i+1));
+                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(3000, 5000), new string[] { }, "storage", i+1));
             } else if (type == 1) {
-                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(1000, 5000), new string[] { }, "forage", i+1));
+                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(3000, 5000), new string[] { }, "forage", i+1));
             } else {
-                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(1000, 5000), new string[] { }, "generic", i+1));
+                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(3000, 5000), new string[] { }, "generic", i+1));
             }
         }
 
@@ -90,11 +100,11 @@ class Program {
             mutex.WaitOne();
 
             // find a free pawn that matches the next order's type and is type exclusive (i.e. give priority to type exclusive pawns)
-            Pawn pawn = freePawns.Find(p => p.type == laborOrders.Peek().type && p.isTypeExclusive);
+            Pawn? pawn = freePawns.Find(p => p.type == laborOrders.Peek().type && p.isTypeExclusive);
 
             // find a free pawn that matches the next order's type
             if(pawn == null){
-                Pawn pawn = freePawns.Find(p => p.type == laborOrders.Peek().type);
+                pawn = freePawns.Find(p => p.type == laborOrders.Peek().type);
             }
 
             // if no free pawn matches the next order's type, find a free pawn that is generic
@@ -108,6 +118,9 @@ class Program {
                 mutex.ReleaseMutex();
                 continue;
             }
+
+            // print out the number of free pawns of each type
+            Console.WriteLine("Free pawns: " + freePawns.Count(p => p.type == "storage") + " storage, " + freePawns.Count(p => p.type == "forage") + " forage, " + freePawns.Count(p => p.type == "generic") + " generic");
 
             // if we reached this point: we have a valid pawn to work on the next order
             pawn.currentOrder = laborOrders.Dequeue();
@@ -128,8 +141,7 @@ class Program {
                 Console.WriteLine("{0,-25}{1,-40}{2}", pawn.name + " (" + pawn.type + ")", " is done working on a " + pawn.type + " order", "("+pawn.currentOrder.orderNumber+")");
                 Console.ResetColor();
                 mutex.ReleaseMutex();
-            });
-
+            }); 
             thread.Start();
         }
     }
