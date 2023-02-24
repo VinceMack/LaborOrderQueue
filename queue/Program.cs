@@ -1,4 +1,9 @@
-﻿struct LaborOrder  {
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
+
+struct LaborOrder  {
 
     public int x, y;
     public int ttc;
