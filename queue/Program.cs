@@ -4,13 +4,15 @@
     public int ttc;
     public string[] actions;
     public string type;
+    public int orderNumber;
 
-    public LaborOrder(int x, int y, int ttc, string[] actions, string type) {
+    public LaborOrder(int x, int y, int ttc, string[] actions, string type, int orderNumber) {
         this.x = x;
         this.y = y;
         this.ttc = ttc;
         this.actions = actions;
         this.type = type;
+        this.orderNumber = orderNumber;
     }
 
 }
@@ -20,10 +22,12 @@ class Pawn  {
     public string name;
     public string type;
     public LaborOrder currentOrder;
+    public Boolean isTypeExclusive;
     
-    public Pawn(string type, string name) {
+    public Pawn(string type, string name, Boolean isTypeExclusive) {
         this.type = type;
         this.name = name;
+        this.isTypeExclusive = isTypeExclusive;
     }
 
 }
@@ -46,27 +50,27 @@ class Program {
         // create a FIFO queue of labor orders called "laborOrders"
         Queue<LaborOrder> laborOrders = new Queue<LaborOrder>();
 
-        // fill the list of free pawns with 10 pawns randomly assigned to either "storage", "forage", or "generic" as their type and give them a random name
+        // fill the list of free pawns with 10 pawns randomly assigned to either "storage", "forage", or "generic" as their type. give them a random name. give tham random t/f for isTypeExclusive.
         for (int i = 0; i < 10; i++) {
             int type = new Random().Next(0, 3);
             if (type == 0) {
-                freePawns.Add(new Pawn("storage", firstNames[new Random().Next(0, firstNames.Length)]));
+                freePawns.Add(new Pawn("storage", firstNames[new Random().Next(0, firstNames.Length)], new Random().Next(0, 2) == 0));
             } else if (type == 1) {
-                freePawns.Add(new Pawn("forage", firstNames[new Random().Next(0, firstNames.Length)]));
+                freePawns.Add(new Pawn("forage", firstNames[new Random().Next(0, firstNames.Length)], new Random().Next(0, 2) == 0));
             } else {
-                freePawns.Add(new Pawn("generic", firstNames[new Random().Next(0, firstNames.Length)]));
+                freePawns.Add(new Pawn("generic", firstNames[new Random().Next(0, firstNames.Length)], new Random().Next(0, 2) == 0));
             }
         }
 
-        // fill the queue of labor orders with 25 labor orders randomly assigned to either "storage", "forage", or "generic" as their type (other properties can be 0; other than tcc which is 15 seconds)
+        // fill the queue of labor orders with 25 labor orders randomly assigned to either "storage", "forage", or "generic" as their type (other properties can be 0; other than tcc which is random between 1000 and 10000)
         for (int i = 0; i < 25; i++) {
             int type = new Random().Next(0, 3);
             if (type == 0) {
-                laborOrders.Enqueue(new LaborOrder(0, 0, 15000, new string[0], "storage"));
+                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(1000, 5000), new string[] { }, "storage", i+1));
             } else if (type == 1) {
-                laborOrders.Enqueue(new LaborOrder(0, 0, 15000, new string[0], "forage"));
+                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(1000, 5000), new string[] { }, "forage", i+1));
             } else {
-                laborOrders.Enqueue(new LaborOrder(0, 0, 15000, new string[0], "generic"));
+                laborOrders.Enqueue(new LaborOrder(0, 0, new Random().Next(1000, 5000), new string[] { }, "generic", i+1));
             }
         }
 
@@ -76,26 +80,57 @@ class Program {
         // start a new thread and have it sleep for the time to complete of the labor order for the pawn
         // when the thread wakes up, add the pawn back to the list of free pawns and remove it from the list of working pawns
         Mutex mutex = new Mutex();
-        while (laborOrders.Count > 0 && freePawns.Count > 0) {
-            Pawn pawn = null;
-            mutex.WaitOne();
-            pawn = freePawns[0];
-            mutex.ReleaseMutex();
+        while (laborOrders.Count > 0) {
 
-            if(pawn==null){
+            while(!freePawns.Any()){
+                // wait for a free pawn
+                //Console.WriteLine("Waiting for a free pawn...");
+            }
+
+            mutex.WaitOne();
+
+            // find a free pawn that matches the next order's type and is type exclusive (i.e. give priority to type exclusive pawns)
+            Pawn pawn = freePawns.Find(p => p.type == laborOrders.Peek().type && p.isTypeExclusive);
+
+            // find a free pawn that matches the next order's type
+            if(pawn == null){
+                Pawn pawn = freePawns.Find(p => p.type == laborOrders.Peek().type);
+            }
+
+            // if no free pawn matches the next order's type, find a free pawn that is generic
+            if(pawn == null){
+                pawn = freePawns.Find(p => p.type == "generic");
+            }
+
+            // no valid pawns; skip this iteration and try again.
+            if(pawn == null){
+                // no free pawn matches the next order's type or is generic
+                mutex.ReleaseMutex();
                 continue;
             }
 
+            // if we reached this point: we have a valid pawn to work on the next order
+            pawn.currentOrder = laborOrders.Dequeue();
             freePawns.Remove(pawn);
             workingPawns.Add(pawn);
-            pawn.currentOrder = laborOrders.Dequeue();
-            new Thread(() => {
-                Console.WriteLine(pawn.name + "\tis working on a " + pawn.currentOrder.type + " order."); // print the name of the pawn and the type of labor order they are working on
+
+            Console.ForegroundColor = ConsoleColor.Red;
+            Console.WriteLine("{0,-25}{1,-40}{2}", pawn.name + " (" + pawn.type + ")", " is working on a " + pawn.type + " order", "("+pawn.currentOrder.orderNumber+")");
+            Console.ResetColor();
+            mutex.ReleaseMutex();
+
+            Thread thread = new Thread(() => { // this where the LaborOrder would be passed to the PawnAI to process/complete.
                 Thread.Sleep(pawn.currentOrder.ttc);
-                workingPawns.Remove(pawn);
+                mutex.WaitOne();
                 freePawns.Add(pawn);
-                Console.WriteLine(pawn.name + " is freed."); // print the name of the pawn and the type of labor order they are working on
-            }).Start();
+                workingPawns.Remove(pawn);
+                Console.ForegroundColor = ConsoleColor.Green;
+                Console.WriteLine("{0,-25}{1,-40}{2}", pawn.name + " (" + pawn.type + ")", " is done working on a " + pawn.type + " order", "("+pawn.currentOrder.orderNumber+")");
+                Console.ResetColor();
+                mutex.ReleaseMutex();
+            });
+
+            thread.Start();
         }
     }
 }
