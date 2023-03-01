@@ -43,7 +43,7 @@ class Pawn  {
 
 }
 
-class Program {
+class GlobalLevelQueue {
 
     static void Main(string[] args) {
 
