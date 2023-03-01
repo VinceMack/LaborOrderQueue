@@ -14,11 +14,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "C:\\Users\\VAM\\Desktop\\Priority Event Queue\\queue\\queue.csproj",
+      "projectUniqueName": "C:\\Users\\VAM\\Documents\\projects\\GlobalPriorityEventQueue\\queue.csproj",
       "projectName": "queue",
-      "projectPath": "C:\\Users\\VAM\\Desktop\\Priority Event Queue\\queue\\queue.csproj",
+      "projectPath": "C:\\Users\\VAM\\Documents\\projects\\GlobalPriorityEventQueue\\queue.csproj",
       "packagesPath": "C:\\Users\\VAM\\.nuget\\packages\\",
-      "outputPath": "C:\\Users\\VAM\\Desktop\\Priority Event Queue\\queue\\obj\\",
+      "outputPath": "C:\\Users\\VAM\\Documents\\projects\\GlobalPriorityEventQueue\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

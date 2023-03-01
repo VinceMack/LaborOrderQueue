@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "JS5Y275FMLlVYPsNRzOmxY+3R6rhqACYYABWrX15gDS+pg/EbKQCOn5rwTskoYahYltx9gAZbF21UMtG3Mv19w==",
+  "dgSpecHash": "RV5lftpT6WDaqwnQGxPi8oJrcAaxx126NbQDqP5Nt9h8PWrwYk+Nw8IGo9l9/q2o3DpoyE4FEG/dcgwnydvF8Q==",
   "success": true,
-  "projectFilePath": "C:\\Users\\VAM\\Desktop\\Priority Event Queue\\queue\\queue.csproj",
+  "projectFilePath": "C:\\Users\\VAM\\Documents\\projects\\GlobalPriorityEventQueue\\queue.csproj",
   "expectedPackageFiles": [],
   "logs": []
 }
