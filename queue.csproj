@@ -5,9 +5,7 @@
     <TargetFramework>net7.0</TargetFramework>
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
-    <StartupObject>PawnLevelQueue</StartupObject>
-    <!--<StartupObject>GlobalLevelQueue</StartupObject>-->
-    <!--<StartupObject>PawnLevelQueue</StartupObject>-->
+    <StartupObject>LaborOrderQueue</StartupObject>
   </PropertyGroup>
 
 </Project>
