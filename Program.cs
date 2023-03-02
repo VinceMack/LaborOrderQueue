@@ -16,12 +16,16 @@ public struct LaborOrder  {
     // time to complete the labor order
     public int timeToComplete;
 
+    public int orderNumber;
+    public static int orderCount = 0;
+
     // random (default) constructor
     public LaborOrder() {
         // assign a random labor type
         laborType = (LaborTypes)new Random().Next(0, Enum.GetValues(typeof(LaborTypes)).Length);
         // assign a random time to complete
         timeToComplete = new Random().Next(5, 50);
+        orderNumber = orderCount++;
     }
 }
 
@@ -31,10 +35,10 @@ public class Pawn  {
     public string? name;
 
     // current labor order to fulfill
-    public LaborOrder? currentLaborOrder;
+    public LaborOrder? currentLaborOrder = null;
 
     // array of lists of labor types
-    public List<LaborTypes>[] laborTypeLists = new List<LaborTypes>[4];
+    public List<LaborTypes>[] queueAnwerPriority = new List<LaborTypes>[4];
 
     public Pawn(){
 
@@ -42,24 +46,21 @@ public class Pawn  {
         string[] names = {"James", "John", "Robert", "Michael", "William", "David", "Richard", "Charles", "Joseph", "Thomas", "Christopher", "Daniel", "Paul", "Mark", "Donald", "George", "Kenneth", "Steven", "Edward", "Brian", "Ronald", "Anthony", "Kevin", "Jason", "Matthew", "Gary", "Timothy", "Jose", "Larry", "Jeffrey", "Frank", "Scott", "Eric", "Stephen", "Andrew", "Raymond", "Gregory", "Joshua", "Jerry", "Dennis", "Walter", "Patrick", "Peter", "Harold", "Douglas", "Henry", "Carl", "Arthur", "Ryan", "Roger", "Joe", "Juan", "Jack", "Albert", "Jonathan", "Justin", "Terry", "Gerald", "Keith", "Samuel", "Willie", "Ralph", "Lawrence", "Nicholas", "Roy", "Benjamin", "Bruce", "Brandon", "Adam", "Harry", "Fred", "Wayne", "Billy", "Steve", "Louis", "Jeremy", "Aaron", "Randy", "Howard", "Eugene", "Carlos", "Russell", "Bobby", "Victor", "Martin", "Ernest", "Phillip", "Todd", "Jesse", "Craig", "Alan", "Shawn", "Clarence", "Sean", "Philip", "Chris", "Johnny", "Earl", "Jimmy", "Antonio", "Danny", "Bryan", "Tony", "Luis", "Mike", "Stanley", "Leonard", "Nathan", "Dale", "Manuel", "Rodney", "Curtis", "Norman", "Allen", "Marvin", "Glenn", "Jeffery", "Travis", "Jeff", "Chad", "Jacob", "Lee", "Melvin", "Alfred", "Kyle", "Francis", "Bradley", "Jesus", "Herbert", "Frederick", "Ray", "Joel", "Edwin", "Don", "Eddie", "Ricky", "Troy", "Randall", "Barry", "Alexander" };
         name = names[new Random().Next(0, names.Length)];
 
-        // set default labor order to null
-        currentLaborOrder = null;
-
         // initialize the labor type lists
-        for (int i = 0; i < laborTypeLists.Length; i++) {
-            laborTypeLists[i] = new List<LaborTypes>();
+        for (int i = 0; i < queueAnwerPriority.Length; i++) {
+            queueAnwerPriority[i] = new List<LaborTypes>();
         }
 
         // Loop through the labor types and append them to a random labor type list
         foreach (LaborTypes laborType in Enum.GetValues(typeof(LaborTypes))) {
-            laborTypeLists[new Random().Next(0, laborTypeLists.Length)].Add(laborType);
+            queueAnwerPriority[new Random().Next(0, queueAnwerPriority.Length)].Add(laborType);
         }
 
-        //// print out the pawn's name and labor type lists
-        //Console.WriteLine("Pawn name: " + name);
-        //for (int i = 0; i < laborTypeLists.Length; i++) {
-        //    Console.WriteLine("Labor type list " + (i+1) + ": " + string.Join(", ", laborTypeLists[i]));
-        //}
+        // print out the pawn's name and labor type lists
+        Console.WriteLine("Pawn name: " + name);
+        for (int i = 0; i < queueAnwerPriority.Length; i++) {
+            Console.WriteLine("Labor type list " + (i+1) + ": " + string.Join(", ", queueAnwerPriority[i]));
+        }
     }
 }
 
@@ -94,6 +95,23 @@ class Program {
 
     static void Main(string[] args) {
 
+        ConsoleColor[] colors = {
+            ConsoleColor.Black,
+            ConsoleColor.DarkBlue,
+            ConsoleColor.DarkCyan,
+            ConsoleColor.DarkRed,
+            ConsoleColor.DarkGreen,
+            ConsoleColor.DarkMagenta,
+            ConsoleColor.DarkYellow,
+            ConsoleColor.Gray,
+            ConsoleColor.DarkGray,
+            ConsoleColor.Blue,
+            ConsoleColor.Cyan,
+            ConsoleColor.Red,
+            ConsoleColor.Magenta,
+            ConsoleColor.Yellow,
+        };
+
         // create a list of pawns
         List<Pawn> pawns = new List<Pawn>();
 
@@ -108,44 +126,54 @@ class Program {
         // While there are still labor orders to be fulfilled:
         //  Loop through the list of pawns. For each pawn:
         //      If the pawn's current labor order is null, find a labor order for the pawn.
-        //          search the labor queues for a labor order that matches the first labor type in the pawn's labor type list at index 0
+        //          find the labor type list that the pawn has the highest priority for and search the the queues of the list that contain labor orders of that type
         //          if found, assign the labor order to the pawn's current labor order and remove the labor order from the queue
         //          create a thread to simulate the pawn completing the labor order by sleeping for the time to complete
-        //          if not found, increment the index by 1 and search that labor type queue
-        //          if the index is ever greater than the number of labor type lists, do nothing and move on to the next pawn
+        //          if not found, move to a lower priority labor type queue and search the list of the queues that contain labor orders of that type
+        //          if no labor order can be assigned, do nothing with that pawn and move on to the next pawn
         //      If the pawn's current labor order is not null, do nothing and move on to the next pawn
-        //  Sleep for 1 second
-        
-        // While there are still labor orders to be fulfilled:
-        while (queueManager.laborQueues.Any(queue => queue.Count > 0)) {
+        //  Sleep for 1 second to wait for the last thread to finish
 
-            // Loop through the list of pawns. For each pawn:
+        Mutex mutex = new Mutex();
+        int colorCount = 0;
+        while (queueManager.laborQueues.Any(q => q.Count > 0)) {
             foreach (Pawn pawn in pawns) {
-
-                // If the pawn's current labor order is null, find a labor order for the pawn.
                 if (pawn.currentLaborOrder == null) {
-
-                    // search the labor queues for a labor order that matches the first labor type in the pawn's labor type list at index 0
-                    for (int i = 0; i < pawn.laborTypeLists.Length; i++) {
-
-                        // if found, assign the labor order to the pawn's current labor order and remove the labor order from the queue
-                        if (queueManager.laborQueues[(int)pawn.laborTypeLists[i][0]].Count > 0) {
-                            pawn.currentLaborOrder = queueManager.laborQueues[(int)pawn.laborTypeLists[i][0]].Dequeue();
-                            Console.WriteLine($"{pawn.name} is now fulfilling a labor order of type {pawn.currentLaborOrder.laborType}.");
-                            Thread thread = new Thread(() => {
-                                Thread.Sleep(pawn.currentLaborOrder.timeToComplete);
-                                Console.WriteLine($"{pawn.name} has completed a labor order of type {pawn.currentLaborOrder.laborType}.");
-                                pawn.currentLaborOrder = null;
-                            });
+                    for (int i = 0; i < pawn.queueAnwerPriority.Length; i++) {
+                        foreach (LaborTypes laborType in pawn.queueAnwerPriority[i]) {
+                            if (queueManager.laborQueues[(int)laborType].Count > 0) {
+                                pawn.currentLaborOrder = queueManager.laborQueues[(int)laborType].Dequeue();
+                                Thread thread = new Thread(() => {
+                                    // simulate the pawn working on the order
+                                    mutex.WaitOne();
+                                    ConsoleColor color = colors[colorCount++ % colors.Length];
+                                    Console.ForegroundColor = color;
+                                    Console.WriteLine($"STARTING: {pawn.name,-11} is working on {pawn.currentLaborOrder?.laborType, -6} order {pawn.currentLaborOrder?.orderNumber}");
+                                    Console.ForegroundColor = ConsoleColor.White;
+                                    mutex.ReleaseMutex();
+                                    Thread.Sleep(pawn.currentLaborOrder?.timeToComplete ?? 0);
+                                    mutex.WaitOne();
+                                    Console.ForegroundColor = color;
+                                    Console.WriteLine($"ENDING:   {pawn.name,-11} has finished  {pawn.currentLaborOrder?.laborType, -6} order {pawn.currentLaborOrder?.orderNumber}");
+                                    Console.ForegroundColor = ConsoleColor.White;
+                                    pawn.currentLaborOrder = null;
+                                    mutex.ReleaseMutex();
+                                });
+                                thread.Start();
+                                break;
+                            }
+                        }
+                        if (pawn.currentLaborOrder != null) {
                             break;
                         }
                     }
                 }
             }
-
-            // Sleep for 1 second
-            Thread.Sleep(1000);
         }
 
+        Thread.Sleep(1000);
+        Console.ForegroundColor = ConsoleColor.Green;
+        Console.WriteLine("\x1b[1mThere are no more orders left to assign.\x1b[0m");
+        Console.ForegroundColor = ConsoleColor.White;
     }
 }
